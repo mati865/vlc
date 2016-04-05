@@ -153,6 +153,11 @@ static int Demux( demux_t *p_demux )
 
     p_input = GetCurrentItem( p_demux );
     p_node = input_item_node_Create( p_input );
+    if( p_node == NULL )
+    {
+        input_item_Release( p_input );
+        return VLC_ENOMEM;
+    }
     p_node->b_can_loop = p_demux->p_sys->b_dir_can_loop;
     input_item_Release(p_input);
 
@@ -163,13 +168,13 @@ static int Demux( demux_t *p_demux )
     {
         int i_name_len = p_item->psz_name ? strlen( p_item->psz_name ) : 0;
 
-        /* skip "." and ".." and hidden files if option is activated */
-        if( ( !b_show_hiddenfiles && i_name_len > 0 &&
-              p_item->psz_name[0] == '.' ) ||
-            ( i_name_len == 1 && p_item->psz_name[0] == '.' ) ||
-            ( i_name_len == 2 && p_item->psz_name[0] == '.' &&
-              p_item->psz_name[1] == '.' ) ||
-            has_ext( psz_ignored_exts, p_item->psz_name ))
+        /* skip null, "." and ".." and hidden files if option is activated */
+        if( !i_name_len || strcmp( p_item->psz_name, "." ) == 0
+         || strcmp( p_item->psz_name, ".." ) == 0
+         || ( !b_show_hiddenfiles && p_item->psz_name[0] == '.' ) )
+            goto skip_item;
+        /* skip ignored files */
+        if( has_ext( psz_ignored_exts, p_item->psz_name ) )
             goto skip_item;
 
         input_item_CopyOptions( p_node->p_item, p_item );
