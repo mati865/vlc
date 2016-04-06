@@ -1,6 +1,7 @@
 before_script:
   - uname -a
   - add-apt-repository -y ppa:wine/wine-builds && apt-get update
+  - apt-cache pkgnames
   - apt-get -y install gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-tools libtool automake autoconf autopoint make gettext lua5.2 lua5.1  pkg-config qt5-default qt4-dev-tools git subversion cmake cvs yasm ragel p7zip
   - apt-get install -y --install-recommends wine-staging
 
