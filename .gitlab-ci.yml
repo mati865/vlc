@@ -1,0 +1,21 @@
+before_script:
+  - uname -a
+  - add-apt-repository -y ppa:wine/wine-builds && apt-get update
+  - apt-get -y install gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-tools libtool automake autoconf autopoint make gettext lua5.2 lua5.1  pkg-config qt5-default qt4-dev-tools git subversion cmake cvs yasm ragel p7zip
+  - apt-get install -y --install-recommends wine-staging
+
+job1:
+ script:
+  - uname -a
+  - mkdir -p contrib/win64 && cd contrib/win64
+  - ../bootstrap --host=x86_64-w64-mingw32
+  - make prebuild
+  - rm -f ../i686-w64-mingw32/bin/moc ../i686-w64-mingw32/bin/uic ../i686-w64-mingw32/bin/rcc
+  - cd -
+  - ./bootstrap
+  - mkdir win64
+  - cd win64
+  - export PKG_CONFIG_LIBDIR=$HOME/vlc/contrib/x86_64-w64-mingw32/lib/pkgconfig
+  - ../extras/package/win32/configure.sh --host=x86_64-w64-mingw32
+  - make
+  - make package-win32-7zip
