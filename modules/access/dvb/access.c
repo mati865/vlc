@@ -59,6 +59,9 @@ static void Close( vlc_object_t *p_this );
 #define SATELLITE_TEXT N_("Satellite scanning config")
 #define SATELLITE_LONGTEXT N_("filename of config file in share/dvb/dvb-s")
 
+#define SCANLIST_TEXT N_("Scan tuning list")
+#define SCANLIST_LONGTEXT N_("filename containing initial scan tuning data")
+
 vlc_module_begin ()
     set_shortname( N_("DVB") )
     set_description( N_("DVB input with v4l2 support") )
@@ -68,6 +71,8 @@ vlc_module_begin ()
     add_bool( "dvb-probe", true, PROBE_TEXT, PROBE_LONGTEXT, true )
     /* DVB-S (satellite) */
     add_string( "dvb-satellite", NULL, SATELLITE_TEXT, SATELLITE_LONGTEXT,
+                true )
+    add_string( "dvb-scanlist", NULL, SCANLIST_TEXT, SCANLIST_LONGTEXT,
                 true )
 
     set_capability( "access", 0 )
@@ -157,17 +162,21 @@ static int Open( vlc_object_t *p_this )
         scan_parameter_t parameter;
         scan_t *p_scan;
 
+        scan_parameter_Init( &parameter );
+
         msg_Dbg( p_access, "setting filter on PAT/NIT/SDT (DVB only)" );
         FilterSet( p_access, 0x00, OTHER_TYPE );    // PAT
         FilterSet( p_access, 0x10, OTHER_TYPE );    // NIT
         FilterSet( p_access, 0x11, OTHER_TYPE );    // SDT
 
-        if( FrontendGetScanParameter( p_access, &parameter ) ||
+        if( FrontendFillScanParameter( p_access, &parameter ) ||
             (p_scan = scan_New( VLC_OBJECT(p_access), &parameter )) == NULL )
         {
+            scan_parameter_Clean( &parameter );
             Close( VLC_OBJECT(p_access) );
             return VLC_EGENERIC;
         }
+        scan_parameter_Clean( &parameter );
         p_sys->scan = p_scan;
         p_sys->i_read_once = DVB_READ_ONCE_SCAN;
     }
@@ -205,7 +214,7 @@ static block_t *BlockScan( access_t *p_access )
 {
     access_sys_t *p_sys = p_access->p_sys;
     scan_t *p_scan = p_sys->scan;
-    scan_configuration_t cfg;
+    scan_tuner_config_t cfg;
 
     /* */
     if( scan_Next( p_scan, &cfg ) )
@@ -352,7 +361,7 @@ static block_t *BlockScan( access_t *p_access )
 
     /* */
     if( i_best_snr > 0 )
-        scan_service_SetSNR( session, i_best_snr );
+        scan_session_SetSNR( session, i_best_snr );
 
     scan_session_Destroy( p_scan, session );
     return NULL;
