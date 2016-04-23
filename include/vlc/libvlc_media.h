@@ -85,14 +85,16 @@ typedef enum libvlc_meta_t {
  * and VideoLAN.LibVLC.State (at bindings/cil/src/media.cs).
  *
  * Expected states by web plugins are:
- * IDLE/CLOSE=0, OPENING=1, BUFFERING=2, PLAYING=3, PAUSED=4,
+ * IDLE/CLOSE=0, OPENING=1, PLAYING=3, PAUSED=4,
  * STOPPING=5, ENDED=6, ERROR=7
  */
 typedef enum libvlc_state_t
 {
     libvlc_NothingSpecial=0,
     libvlc_Opening,
-    libvlc_Buffering,
+    libvlc_Buffering, /* XXX: Deprecated value. Check the
+                       * libvlc_MediaPlayerBuffering event to know the
+                       * buffering state of a libvlc_media_player */
     libvlc_Playing,
     libvlc_Paused,
     libvlc_Stopped,
@@ -272,6 +274,21 @@ typedef enum libvlc_media_parse_flag_t
      */
     libvlc_media_do_interact    = 0x08,
 } libvlc_media_parse_flag_t;
+
+/**
+ * Parse status used sent by libvlc_media_parse_with_options() or returned by
+ * libvlc_media_get_parsed_status()
+ *
+ * \see libvlc_media_parse_with_options
+ * \see libvlc_media_get_parsed_status
+ */
+typedef enum libvlc_media_parsed_status_t
+{
+    libvlc_media_parse_init,
+    libvlc_media_parse_skipped,
+    libvlc_media_parse_failed,
+    libvlc_media_parse_done,
+} libvlc_media_parsed_status_t;
 
 /**
  * Callback prototype to open a custom bitstream input media.
@@ -524,10 +541,6 @@ LIBVLC_API libvlc_media_t *libvlc_media_duplicate( libvlc_media_t *p_md );
  *
  * If the media has not yet been parsed this will return NULL.
  *
- * This methods automatically calls libvlc_media_parse_async(), so after calling
- * it you may receive a libvlc_MediaMetaChanged event. If you prefer a synchronous
- * version ensure that you call libvlc_media_parse() before get_meta().
- *
  * \see libvlc_media_parse
  * \see libvlc_media_parse_async
  * \see libvlc_MediaMetaChanged
@@ -647,6 +660,10 @@ libvlc_media_parse( libvlc_media_t *p_md );
  * event. However if the media was already parsed you will not receive this
  * event.
  *
+ * \deprecated You can't be sure to receive the libvlc_MediaParsedChanged
+ *             event (you can wait indefinitely for this event).
+ *             Use libvlc_media_parse_with_options instead
+ *
  * \see libvlc_media_parse
  * \see libvlc_MediaParsedChanged
  * \see libvlc_media_get_meta
@@ -654,7 +671,7 @@ libvlc_media_parse( libvlc_media_t *p_md );
  *
  * \param p_md media descriptor object
  */
-LIBVLC_API void
+LIBVLC_DEPRECATED LIBVLC_API void
 libvlc_media_parse_async( libvlc_media_t *p_md );
 
 /**
@@ -663,17 +680,18 @@ libvlc_media_parse_async( libvlc_media_t *p_md );
  * This fetches (local or network) art, meta data and/or tracks information.
  * This method is the extended version of libvlc_media_parse_async().
  *
- * To track when this is over you can listen to libvlc_MediaParsedChanged
- * event. However if this functions returns an error, you will not receive this
- * event.
+ * To track when this is over you can listen to libvlc_MediaParsedStatus
+ * event. However if this functions returns an error, you will not receive any
+ * events.
  *
  * It uses a flag to specify parse options (see libvlc_media_parse_flag_t). All
  * these flags can be combined. By default, media is parsed if it's a local
  * file.
  *
- * \see libvlc_MediaParsedChanged
+ * \see libvlc_MediaParsedStatus
  * \see libvlc_media_get_meta
  * \see libvlc_media_tracks_get
+ * \see libvlc_media_get_parsed_status
  * \see libvlc_media_parse_flag_t
  *
  * \param p_md media descriptor object
@@ -686,7 +704,10 @@ libvlc_media_parse_with_options( libvlc_media_t *p_md,
                                  libvlc_media_parse_flag_t parse_flag );
 
 /**
- * Get Parsed status for media descriptor object.
+ * Return true is the media descriptor object is parsed
+ *
+ * \deprecated This can return true in case of failure.
+ *             Use libvlc_media_get_parsed_status instead
  *
  * \see libvlc_MediaParsedChanged
  *
@@ -695,8 +716,21 @@ libvlc_media_parse_with_options( libvlc_media_t *p_md,
  *
  * \libvlc_return_bool
  */
-LIBVLC_API int
+LIBVLC_DEPRECATED LIBVLC_API int
    libvlc_media_is_parsed( libvlc_media_t *p_md );
+
+/**
+ * Get Parsed status for media descriptor object.
+ *
+ * \see libvlc_MediaParsedStatus
+ * \see libvlc_media_parsed_status_t
+ *
+ * \param p_md media descriptor object
+ * \return a value of the libvlc_media_parsed_status_t enum
+ * \version LibVLC 3.0.0 or later
+ */
+LIBVLC_API libvlc_media_parsed_status_t
+   libvlc_media_get_parsed_status( libvlc_media_t *p_md );
 
 /**
  * Sets media descriptor's user_data. user_data is specialized data

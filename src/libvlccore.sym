@@ -173,6 +173,7 @@ input_DecoderFlush
 input_GetItem
 input_item_AddInfo
 input_item_AddOption
+input_item_AddOptions
 input_item_AddOpaque
 input_item_Copy
 input_item_CopyOptions
@@ -190,8 +191,6 @@ input_item_IsPreparsed
 input_item_MetaMatch
 input_item_MergeInfos
 input_item_NewExt
-input_item_NewWithType
-input_item_NewWithTypeExt
 input_item_Hold
 input_item_Release
 input_item_node_AppendItem
@@ -443,6 +442,7 @@ us_atof
 us_strtod
 us_strtof
 us_vasprintf
+vlc_close
 vlc_fopen
 utf8_fprintf
 vlc_loaddir

@@ -1550,12 +1550,13 @@ then
       AC_MSG_ERROR([Could not find lua. Lua is needed for some interfaces (rc, telnet, http) as well as many other custom scripts. Use --disable-lua to ignore this error.])
   fi
   AC_ARG_VAR([LUAC], [LUA byte compiler])
-  AC_CHECK_PROGS(LUAC, [${LUAC} luac5.3 luac], [false])
+  AC_PATH_PROGS(LUAC, [${LUAC} luac5.3 luac], [false])
   AS_IF([test "${LUAC}" = "false"], [
     AC_MSG_ERROR([Could not find the LUA byte compiler.])
   ])
   AS_IF([test -d "${CONTRIB_DIR}" -a -f "${CONTRIB_DIR}/lib/liblua.a" -a `echo|${LUAC} -o - -|od -j 8 -N 2 -t x2|head -n 1|tr -s ' '|cut -d' ' -f2` != 0404], [
-    AC_MSG_ERROR([You need 32-bits luac when using lua from contrib.])
+    AC_MSG_WARN([You need 32-bits luac when using lua from contrib.])
+    have_lua=no
   ])
 fi
 AM_CONDITIONAL(BUILD_LUA, [test "${have_lua}" = "yes"])
@@ -1756,7 +1757,7 @@ dnl
 dnl  libsmbclient plugin
 dnl
 PKG_ENABLE_MODULES_VLC([SMBCLIENT], [smb], [smbclient], (SMB/CIFS support), [auto])
-AS_IF([test "${SYS}" = "mingw32"], [ VLC_ADD_PLUGIN([smb]) ])
+AS_IF([test "${SYS}" = "mingw32" -a "${enable_smbclient}" != "no"], [ VLC_ADD_PLUGIN([smb]) ])
 
 dnl
 dnl  liBDSM access module
@@ -2649,21 +2650,6 @@ dnl fdk-aac encoder plugin
 dnl
 PKG_ENABLE_MODULES_VLC([FDKAAC], [], [fdk-aac], [FDK-AAC encoder], [disabled])
 
-dnl
-dnl  QuickTime plugin
-dnl
-AC_ARG_ENABLE(quicktime,
-  [  --enable-quicktime      QuickTime module (deprecated)])
-if test "${enable_quicktime}" = "yes"; then
-  if test "${SYS}" = "mingw32"; then
-    VLC_ADD_PLUGIN([quicktime])
-  else
-  AC_CHECK_HEADERS(QuickTime/QuickTime.h,
-    [ VLC_ADD_PLUGIN([quicktime])
-      VLC_ADD_LIBS([quicktime],[-Wl,-framework,QuickTime,-framework,Carbon])
-    ], [ AC_MSG_ERROR([cannot find QuickTime headers]) ])
-  fi
-fi
 
 dnl
 dnl A52/AC3 decoder plugin
